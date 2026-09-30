@@ -1,0 +1,3 @@
+- insert:
+    - id: pnpm-build-control
+      name: dsh-pnpm-build-control
