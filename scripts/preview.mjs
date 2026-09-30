@@ -13,6 +13,7 @@ for (const name of ['desktop','web','tui']) {
   await fs.writeFile(join(dir,'pnpm-workspace.yaml'),'packages:\n  - .\nallowBuilds:\n  example-approved: true\n');
 }
 const controller = new BuildControl({home});
+const legacyHost = process.argv.includes('--legacy-host');
 await controller.start();
 const built = await build({entryPoints:['scripts/preview.jsx'],bundle:true,write:false,format:'esm',platform:'browser',define:{'process.env.NODE_ENV':'"development"'}});
 const script = built.outputFiles[0].contents;
@@ -27,7 +28,9 @@ const server = createServer(async(req,res)=>{
       if(req.headers.origin && req.headers.origin !== `http://${req.headers.host}`){res.writeHead(403);return res.end();}
       let bytes=0,body='';for await(const chunk of req){bytes+=chunk.length;if(bytes>1024)throw Error('请求过大');body+=chunk;}
       const args=JSON.parse(body);
+      if (legacyHost && args.action === 'set') throw Error('测试旧后端不应收到写入请求');
       const result=args.action==='status'?await controller.status():args.action==='set'?await controller.setMode(args.mode, { acknowledgeRisk: args.acknowledgeRisk }):(()=>{throw Error('无效操作');})();
+      if (legacyHost) delete result.riskAcknowledged;
       res.setHeader('Content-Type','application/json;charset=utf-8');return res.end(JSON.stringify(result));
     }
     res.writeHead(404);res.end();

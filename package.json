@@ -1,6 +1,6 @@
 {
   "name": "dsh-pnpm-build-control",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "在 DeepSeek Harness 中统一开关所有配置的 pnpm 构建脚本审批。",
   "license": "MIT",
   "author": "Han-1413141",
@@ -22,5 +22,5 @@
   "peerDependencies": { "@deepseek-ai/cordis": ">=4.0.2 <5", "@deepseek-ai/dsh-typert-protocol": ">=0.1.7-0 <0.3.0-0" },
   "peerDependenciesMeta": { "@deepseek-ai/cordis": { "optional": true }, "@deepseek-ai/dsh-typert-protocol": { "optional": true } },
   "devDependencies": { "esbuild": "0.28.2", "react": "18.3.1", "react-dom": "18.3.1" },
-  "scripts": { "build": "node scripts/build.mjs", "test": "node --test test/core.test.mjs", "preview": "node scripts/preview.mjs" }
+  "scripts": { "build": "node scripts/build.mjs", "test": "node --test test/*.test.mjs", "preview": "node scripts/preview.mjs" }
 }

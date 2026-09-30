@@ -34,21 +34,23 @@ https://github.com/Han-1413141/dsh-pnpm-build-control
 dsh plugin --profile desktop add github:Han-1413141/dsh-pnpm-build-control
 ```
 
-固定到首个公开发行版本：
+固定到当前发行版本：
 
 ```powershell
-dsh plugin --profile desktop add github:Han-1413141/dsh-pnpm-build-control#v0.1.1
+dsh plugin --profile desktop add github:Han-1413141/dsh-pnpm-build-control#v0.1.2
 ```
 
 也可从 [Releases](https://github.com/Han-1413141/dsh-pnpm-build-control/releases) 下载 `.tgz` 安装包，再使用 PowerShell：
 
 ```powershell
-dsh plugin --profile desktop add 'D:\Downloads\dsh-pnpm-build-control-0.1.1.tgz'
+dsh plugin --profile desktop add 'D:\Downloads\dsh-pnpm-build-control-0.1.2.tgz'
 ```
 
 需要在 web 配置的界面中显示开关时，将上述命令中的 `desktop` 换为 `web`。任一已安装实例的开关都会控制同一个 DSH_HOME 下的所有配置。插件自身没有 `prepare`、`install` 或 `postinstall` 脚本，不需要先关闭审批才能安装。
 
 仓库和发行包均包含编译后的 `lib/`，安装时无需现场构建。插件首次加载只读取现有状态；首次切换后保存统一策略。
+
+**升级插件后，请完整退出并重新打开 DSH。** 如 DSH 仍驻留托盘，需要从托盘退出；仅刷新窗口或重新打开弹窗不会替换已经加载的后台模块。升级前请先结束需要保留的运行任务。
 
 ## 首次关闭的风险确认
 
@@ -123,6 +125,8 @@ CLI 与界面共用确认记录。已经确认后，普通 `off` 可以直接执
 
 ## 常见问题
 
+**点击确认后提示 `Unrecognized key: "acknowledgeRisk"`**：界面已经更新，后台仍在运行 0.1.0 的旧模块。完整退出 DSH（包括托盘驻留）后重新打开即可加载已安装的新后端。0.1.2 起会在切换前识别这种情况，显示明确的重启提示；不会删除确认字段重试。
+
 **添加插件弹窗没有开关**：确认本插件在当前窗口使用的 profile 中已启用，再重启 DSH。后续 DSH 版本若调整表单结构，需要同步更新界面适配。
 
 **关闭后仍然报错**：展开配置状态，确认目标配置显示“审批已关闭”，并查看 `ignoreScripts` 提示。本插件处理 `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED` 和 `ERR_PNPM_IGNORED_BUILDS` 所对应的构建审批。网络、认证、依赖版本解析及构建脚本本身失败，需要按具体错误处理。
@@ -150,9 +154,11 @@ npm run preview
 
 `npm run preview` 仅监听 `127.0.0.1`，启动后打印访问地址，在项目 `.preview/` 中创建独立测试配置。切换不会修改实际 DSH 设置。
 
+`npm run preview -- --legacy-host` 可模拟新界面连接旧后台，查看重启提示。
+
 已执行的验证：
 
-1. 11 项核心测试：统一切换、保留允许列表与注释、备份、幂等应用、新配置监测、并发写入、异常配置、UTF-8、首次风险确认、旧版设置兼容和 CLI 确认。
+1. 15 项测试：11 项配置与 CLI 测试，加上旧后台识别、兼容后台请求、截图错误复现及错误提示的 4 项回归测试。
 2. 本机 DSH 的真实 Cordis、Typert Loader、Registry 和 Gateway：插件挂载、状态读取、关闭、开启，以及非法请求拦截。
 3. DSH 内置 pnpm 的实际安装：审批开启时测试脚本被拦截；关闭时执行成功；再次开启后新测试包的脚本重新被拦截。
 4. 浏览器中的安装弹窗测试：开关挂载、状态切换、输入框重新渲染、离开表单后清理、首次取消保持原设置、确认后切换，以及页面重载后不重复提示。
