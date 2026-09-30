@@ -2,7 +2,6 @@ import { dirname } from 'node:path';
 import { TypertRemoteService, Remote } from '@deepseek-ai/dsh-typert-protocol';
 import { z } from 'zod';
 import { BuildControl } from './core.js';
-import { TYPERT } from './typert.js';
 
 const requestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('status') }).strict(),
@@ -28,8 +27,7 @@ export async function apply(ctx: any) {
   const controller = new BuildControl({ home, onError: (error: Error) => console.warn(`[${name}] ${error.message}`) });
   new PnpmBuildControlService(ctx, controller);
   ctx.effect(() => () => controller.dispose(), `${name}: close file watchers`);
-  ctx.inject(['typert'], (registryContext: any) => {
-    if (!registryContext.typert.getPackage(name, 'host')) registryContext.typert.register(TYPERT);
-  });
+  // ./typert 由 DSH 的 typert-loader 统一注册；手动注册会与完整启动过程
+  // 竞争同一个 package face，导致加载器回滚其他插件的远程接口。
   await controller.start();
 }

@@ -1,5 +1,12 @@
 # 更新记录
 
+## 0.1.3 · 2026-09-30
+
+- 修复启用插件后重启 DSH 出现 `desktop welcome: Web RPC failed`、无法进入主界面的问题。
+- 移除插件内部手动注册 Typert 的逻辑，由 DSH 的 `typert-loader` 根据 `./typert` 导出统一注册。
+- 避免重复注册使加载器回滚内置接口，导致 `settings/describe` 返回 `gateway/definition-unavailable`。
+- 新增完整 DSH 启动测试，覆盖内置设置、模型提供方列表，以及本插件的状态查询和开关操作。
+
 ## 0.1.2 · 2026-09-30
 
 - 修复升级后新界面连接旧后台时，确认风险按钮显示 `Unrecognized key: "acknowledgeRisk"` 的问题。

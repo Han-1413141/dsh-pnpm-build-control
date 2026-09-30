@@ -55,13 +55,13 @@ dsh plugin --profile desktop add github:Han-1413141/dsh-pnpm-build-control
 固定到当前发行版本：
 
 ```powershell
-dsh plugin --profile desktop add github:Han-1413141/dsh-pnpm-build-control#v0.1.2
+dsh plugin --profile desktop add github:Han-1413141/dsh-pnpm-build-control#v0.1.3
 ```
 
 也可从 [Releases](https://github.com/Han-1413141/dsh-pnpm-build-control/releases) 下载 `.tgz` 安装包，再使用 PowerShell：
 
 ```powershell
-dsh plugin --profile desktop add 'D:\Downloads\dsh-pnpm-build-control-0.1.2.tgz'
+dsh plugin --profile desktop add 'D:\Downloads\dsh-pnpm-build-control-0.1.3.tgz'
 ```
 
 需要在 web 配置的界面中显示开关时，将上述命令中的 `desktop` 换为 `web`。任一已安装实例的开关都会控制同一个 DSH_HOME 下的所有配置。插件自身没有 `prepare`、`install` 或 `postinstall` 脚本，不需要先关闭审批才能安装。
@@ -143,6 +143,8 @@ CLI 与界面共用确认记录。已经确认后，普通 `off` 可以直接执
 
 ## 常见问题
 
+**启用插件后重启提示 `desktop welcome: Web RPC failed`**：请升级至 0.1.3 或更新版本。旧版本手动注册的 Typert 接口与 DSH 自动注册发生冲突，使内置设置接口被撤销，导致桌面启动失败。0.1.3 已移除手动注册。无法进入界面时，可在终端运行上面的安装命令升级，再点击错误窗口中的“Restart”。
+
 **点击确认后提示 `Unrecognized key: "acknowledgeRisk"`**：界面已经更新，后台仍在运行 0.1.0 的旧模块。完整退出 DSH（包括托盘驻留）后重新打开即可加载已安装的新后端。0.1.2 起会在切换前识别这种情况，显示明确的重启提示；不会删除确认字段重试。
 
 **添加插件弹窗没有开关**：确认本插件在当前窗口使用的 profile 中已启用，再重启 DSH。后续 DSH 版本若调整表单结构，需要同步更新界面适配。
@@ -180,6 +182,10 @@ npm run preview
 2. 本机 DSH 的真实 Cordis、Typert Loader、Registry 和 Gateway：插件挂载、状态读取、关闭、开启，以及非法请求拦截。
 3. DSH 内置 pnpm 的实际安装：审批开启时测试脚本被拦截；关闭时执行成功；再次开启后新测试包的脚本重新被拦截。
 4. 浏览器中的安装弹窗测试：开关挂载、状态切换、输入框重新渲染、离开表单后清理、首次取消保持原设置、确认后切换，以及页面重载后不重复提示。
+
+0.1.3 增加完整 DSH 启动回归测试：在独立 `DSH_HOME` 中通过真实 CLI 启动基础配置、Web 应用和本插件，再调用桌面启动必需的 `settings/describe` 与 `llm/listConfigurableProviders`，以及本插件的查询和开关接口。单独加载插件的测试无法覆盖自动接口注册冲突。
+
+开发时设置 `DSH_CLI_ENTRY` 为 DSH 的 CLI JavaScript 入口；使用 Electron 内置运行时还需将 `DSH_EXECUTABLE` 设置为对应可执行文件。然后运行 `npm run test:startup`。测试只启动本地后端，使用独立临时配置，不打开窗口或读取真实会话。
 
 上述浏览器验证使用了与本机 DSH 安装表单相同的关键 DOM 结构。正在运行的 DSH 桌面窗口中的最终显示仍需加载新插件后查看。
 
