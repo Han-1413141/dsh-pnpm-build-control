@@ -26,6 +26,14 @@
 
 这里解除的是**构建脚本审批限制**。实际安装哪个版本，仍由 DSH 插件管理器中的包版本、分支、标签或提交决定；已经固定到某个版本或提交的安装来源，需要更新来源才能获取最新代码。pnpm 的新版本发布等待时间等其他保护设置保持原值。
 
+### 反复安装同一个 Git 地址，获取最新提交
+
+DSH 0.2.0-rc.2 的安装管理器只比较 `package.json` 中依赖地址是否变化。同一个 Git 地址发布了新代码后，pnpm 已完成更新，DSH 却无法识别更新目标，报 `ambiguous-install` 并恢复旧锁文件。
+
+**0.1.4 加入了这个问题的兼容修复。** 插件加载后，在“添加插件”中再次输入同一 Git 地址即可更新。修复根据当前配置补充准确包名，实际交给 pnpm 的仍是原始地址；即使插件版本号没有变化，也能保留新提交。没有新提交时重复安装也能正常完成。
+
+该修复与构建审批开关相互独立，审批开启和关闭时都生效。构建审批、插件兼容性校验和真正安装失败时的回滚仍由原流程处理。修复作用于已加载本插件的 DSH 配置；停用本插件后恢复原生安装行为。[实现与验证说明](docs/same-git-update.md)
+
 ## 界面位置
 
 <img src="docs/screenshots/add-plugin.jpg" alt="添加插件弹窗中，包名输入框下方的构建脚本审批开关" width="520">
@@ -55,13 +63,13 @@ dsh plugin --profile desktop add github:Han-1413141/dsh-pnpm-build-control
 固定到当前发行版本：
 
 ```powershell
-dsh plugin --profile desktop add github:Han-1413141/dsh-pnpm-build-control#v0.1.3
+dsh plugin --profile desktop add github:Han-1413141/dsh-pnpm-build-control#v0.1.4
 ```
 
 也可从 [Releases](https://github.com/Han-1413141/dsh-pnpm-build-control/releases) 下载 `.tgz` 安装包，再使用 PowerShell：
 
 ```powershell
-dsh plugin --profile desktop add 'D:\Downloads\dsh-pnpm-build-control-0.1.3.tgz'
+dsh plugin --profile desktop add 'D:\Downloads\dsh-pnpm-build-control-0.1.4.tgz'
 ```
 
 需要在 web 配置的界面中显示开关时，将上述命令中的 `desktop` 换为 `web`。任一已安装实例的开关都会控制同一个 DSH_HOME 下的所有配置。插件自身没有 `prepare`、`install` 或 `postinstall` 脚本，不需要先关闭审批才能安装。
@@ -69,6 +77,8 @@ dsh plugin --profile desktop add 'D:\Downloads\dsh-pnpm-build-control-0.1.3.tgz'
 仓库和发行包均包含编译后的 `lib/`，安装时无需现场构建。插件首次加载只读取现有状态；首次切换后保存统一策略。
 
 **升级插件后，请完整退出并重新打开 DSH。** 如 DSH 仍驻留托盘，需要从托盘退出；仅刷新窗口或重新打开弹窗不会替换已经加载的后台模块。升级前请先结束需要保留的运行任务。
+
+**从 0.1.3 或更早版本升级**：旧后台尚未包含 Git 重装修复，请使用上面的命令行安装方式；也可在界面输入带 `#v0.1.4` 的地址，使依赖来源发生变化，避开旧管理器的错误判断。升级并完整重启后，即可重复安装同一 Git 地址。
 
 ## 首次关闭的风险确认
 
@@ -180,7 +190,7 @@ npm run preview
 
 已执行的验证：
 
-1. 15 项测试：11 项配置与 CLI 测试，加上旧后台识别、兼容后台请求、截图错误复现及错误提示的 4 项回归测试。
+1. 21 项测试：11 项配置与 CLI 测试、4 项旧后台兼容测试，以及 6 项 Git 地址匹配与兼容处理测试。
 2. 本机 DSH 的真实 Cordis、Typert Loader、Registry 和 Gateway：插件挂载、状态读取、关闭、开启，以及非法请求拦截。
 3. DSH 内置 pnpm 的实际安装：审批开启时测试脚本被拦截；关闭时执行成功；再次开启后新测试包的脚本重新被拦截。
 4. 浏览器中的安装弹窗测试：开关挂载、状态切换、输入框重新渲染、离开表单后清理、首次取消保持原设置、确认后切换，以及页面重载后不重复提示。
@@ -189,11 +199,13 @@ npm run preview
 
 开发时设置 `DSH_CLI_ENTRY` 为 DSH 的 CLI JavaScript 入口；使用 Electron 内置运行时还需将 `DSH_EXECUTABLE` 设置为对应可执行文件。然后运行 `npm run test:startup`。测试只启动本地后端，使用独立临时配置，不打开窗口或读取真实会话。
 
+0.1.4 增加 `npm run test:install`：另设 `DSH_PNPM_ENTRY` 为内置 pnpm 的 JavaScript 入口，测试会创建本地 Git 仓库，通过真实 `pluginManager/installBundle` RPC 验证更新与回滚，并包含上述启动和开关验证。测试中先在未启用本插件时复现错误，再启用修复验证相同地址、相同版本号的新提交，最后停用插件确认原方法得到恢复。
+
 上述浏览器验证使用了与本机 DSH 安装表单相同的关键 DOM 结构。正在运行的 DSH 桌面窗口中的最终显示仍需加载新插件后查看。
 
 配置依据：[pnpm 官方文档：dangerouslyAllowAllBuilds](https://pnpm.io/settings/build#dangerouslyallowallbuilds)。
 
-源码中，`src/core.js` 负责配置管理，`src/index.ts` 和 `src/typert.js` 负责宿主接口，`src/client.jsx` 提供界面，`src/risk.js` 保存共用的风险说明，`src/cli.js` 提供命令行入口。
+源码中，`src/core.js` 负责配置管理，`src/index.ts` 和 `src/typert.js` 负责宿主接口，`src/client.jsx` 提供界面，`src/risk.js` 保存共用的风险说明，`src/cli.js` 提供命令行入口，`src/git-update.js` 处理同一 Git 地址的重复安装兼容问题。
 
 发布前执行 `npm run build` 和 `npm test`，提交生成的 `lib/`，再使用 `npm pack --ignore-scripts` 生成发行包。
 

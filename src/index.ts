@@ -2,6 +2,7 @@ import { dirname } from 'node:path';
 import { TypertRemoteService, Remote } from '@deepseek-ai/dsh-typert-protocol';
 import { z } from 'zod';
 import { BuildControl } from './core.js';
+import { installGitUpdateCompatibility } from './git-update.js';
 
 const requestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('status') }).strict(),
@@ -30,4 +31,7 @@ export async function apply(ctx: any) {
   // ./typert 由 DSH 的 typert-loader 统一注册；手动注册会与完整启动过程
   // 竞争同一个 package face，导致加载器回滚其他插件的远程接口。
   await controller.start();
+  ctx.inject(['pluginManager'], (child: any) => {
+    child.effect(() => installGitUpdateCompatibility(child.pluginManager), `${name}: same-source Git updates`);
+  });
 }
